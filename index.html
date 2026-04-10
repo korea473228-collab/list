@@ -166,7 +166,7 @@
             mRole.style.color = roleObj.color;
             mRole.style.borderColor = roleObj.color + '40';
 
-            mBadgeCont.innerHTML = `<span class="id-badge" style="--group-color-alpha: ${roleObj.alpha}; --group-color-border: ${roleObj.border};">No. ${member.id}</span>`;
+            mBadgeCont.innerHTML = `<span class="id-badge" style="--group-color-alpha: ${roleObj.alpha}; --group-color-border: ${roleObj.border};">고유번호 ${member.id}</span>`;
             
             document.getElementById('mDesc').innerText = member.s || "소개글이 없습니다.";
             document.getElementById('mDmBtn').onclick = () => {
