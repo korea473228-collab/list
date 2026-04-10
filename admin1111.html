@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>특임대 데이터 관리</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --card: #1a1a1f;
+            --accent: #5865F2;
+            --danger: #ff3b30;
+            --text: #ffffff;
+        }
+
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: var(--text); padding: 50px 20px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        h1 { font-size: 24px; margin-bottom: 30px; text-align: center; }
+
+        /* 입력 폼 */
+        .form-card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        input, select { background: #25252b; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; font-size: 14px; }
+        .full-width { width: 100%; margin-top: 10px; }
+        
+        button { cursor: pointer; border: none; font-weight: 700; transition: 0.2s; }
+        .add-btn { background: var(--accent); color: #fff; width: 100%; padding: 15px; border-radius: 12px; margin-top: 10px; }
+        .add-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* 테이블 스타일 */
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 20px; overflow: hidden; }
+        th { background: rgba(255,255,255,0.03); padding: 15px; font-size: 13px; text-align: left; border-bottom: 1px solid #333; }
+        td { padding: 15px; font-size: 14px; border-bottom: 1px solid #2a2a2f; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        .del-btn { background: var(--danger); color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+        .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🛡️ 부대원 데이터 관리</h1>
+
+    <div class="form-card">
+        <div class="grid-inputs">
+            <input type="text" id="addName" placeholder="닉네임 (name)">
+            <select id="addRole">
+                <option value="특임대 사령관">특임대 사령관</option>
+                <option value="특임대 부사령관">특임대 부사령관</option>
+                <option value="특임대 팀장">특임대 팀장</option>
+                <option value="특임대 팀원">특임대 팀원</option>
+                <option value="특임대 수습">특임대 수습</option>
+            </select>
+            <input type="number" id="addRank" placeholder="순서 (1, 2, 3...)">
+        </div>
+        <input type="text" id="addUrl" class="full-width" placeholder="프로필 이미지 URL (url)">
+        <input type="text" id="addS" class="full-width" placeholder="소개글 (s)">
+        <input type="text" id="addDiscord" class="full-width" placeholder="디스코드 고유 ID (discord_id)">
+        <button class="add-btn" onclick="addMember()">신규 부대원 추가</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>순서</th>
+                <th>닉네임</th>
+                <th>역할</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody id="memberList">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    const _u = "aHR0cHM6Ly9oaWFjdXB0cmlnc25zdHloamFmbC5zdXBhYmFzZS5jbw==";
+    const _k = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW1ocFlXTjFjSFJ5YVdkemJuTjBlV2hxWVdac0lpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTnpVMk5UTTBOellzSW1WNGNDSTZNakE1TVRJeU9UUTNObjAuM081Q2JDU01UeTFNQnFGYUVOQTFScno3V3g0UHNmSmtQM3B2Rk9QWld4UQ==";
+    const sb = supabase.createClient(atob(_u), atob(_k));
+
+    // 데이터 불러오기
+    async function fetchMembers() {
+        const { data, error } = await sb.from('org_members').select('*').order('rank', { ascending: true });
+        if (error) {
+            console.error(error);
+            return;
+        }
+        
+        const tbody = document.getElementById('memberList');
+        tbody.innerHTML = '';
+        
+        data.forEach(m => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${m.rank}</td>
+                <td><b>${m.name}</b><br><small style="color:rgba(255,255,255,0.3)">No. ${m.id}</small></td>
+                <td><span class="badge">${m.role}</span></td>
+                <td>
+                    <button class="del-btn" onclick="deleteMember(${m.id}, '${m.name}')">삭제</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 데이터 추가하기
+    async function addMember() {
+        const name = document.getElementById('addName').value;
+        const role = document.getElementById('addRole').value;
+        const rank = document.getElementById('addRank').value;
+        const url = document.getElementById('addUrl').value;
+        const s = document.getElementById('addS').value;
+        const discord_id = document.getElementById('addDiscord').value;
+
+        if(!name || !rank) return alert("닉네임과 순서는 필수입니다.");
+
+        const { error } = await sb.from('org_members').insert([
+            { name, role, rank: parseInt(rank), url, s, discord_id }
+        ]);
+
+        if (error) {
+            alert("추가 실패: " + error.message);
+        } else {
+            alert(`${name} 부대원이 추가되었습니다.`);
+            location.reload();
+        }
+    }
+
+    // 데이터 삭제하기
+    async function deleteMember(id, name) {
+        if (!confirm(`[${name}] 부대원을 정말 삭제하시겠습니까?`)) return;
+
+        const { error } = await sb.from('org_members').delete().eq('id', id);
+
+        if (error) {
+            alert("삭제 실패: " + error.message);
+        } else {
+            fetchMembers();
+        }
+    }
+
+    fetchMembers();
+</script>
+</body>
+</html>
