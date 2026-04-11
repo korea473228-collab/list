@@ -62,7 +62,7 @@
     <div id="login" class="login">
         <div class="login-box">
             <div style="margin-bottom:8px; font-weight:600">접속 코드</div>
-            <input id="codeInput" class="input" placeholder="코드 입력" />
+            <input id="codeInput" type="password" class="input" placeholder="코드 입력" autocomplete="new-password" />
             <button class="login-btn" onclick="login()">로그인</button>
         </div>
     </div>
@@ -237,23 +237,38 @@
         }
 
         async function copyNotice(name) {
-            const text = `/보안국 ╭《 ${name} 강도사건 발생 》╮ 보안국이 출동합니다. 현 시간부로 사건 지점으로부터 2블럭이상 접근 시 공범으로 간주하여 사살 및 긴급체포 등 불이익이 발생할 수 있습니다.\n-『 보안국 』-`;
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(text);
-                } else {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = text;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(textArea);
-                }
-                toast("공지 문구 복사됨", "win");
-            } catch (err) {
-                toast("복사 실패", "lose");
+    const text = `/보안국 ╭《 ${name} 강도사건 발생 》╮ 보안국이 출동합니다. 현 시간부로 사건 지점으로부터 2블럭이상 접근 시 공범으로 간주하여 사살 및 긴급체포 등 불이익이 발생할 수 있습니다.\n-『 보안국 』-`;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+        }
+        toast("공지 복사 완료", "win");
+    } catch (err) {
+        toast("복사 실패", "lose");
+    }
+
+    let matchName = name;
+    if (name.includes("ATM")) matchName = "ATM";
+    if (name.includes("편의점")) matchName = "편의점";
+    if (name.includes("빈집")) matchName = "빈집";
+
+    const rows = document.querySelectorAll('.law-row');
+    rows.forEach(row => {
+        const lawName = row.cells[0].innerText;
+        if (lawName === matchName || lawName === name) {
+            if (!row.classList.contains('selected')) {
+                row.click(); 
             }
         }
+    });
+}
 
         async function sendWebhook(data) {
             const isWin = data.result === "승리";
